@@ -1,0 +1,349 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Zombie Game</title>
+<style>
+	body{
+		background-color:#fff;
+		padding:0px;
+		margin:0px;
+	}
+	canvas{
+		background-color:#000000;
+	}
+</style>
+<script type="application/javascript">
+	Array.prototype.remove = function(i){
+		
+	}
+	var TileSet = Array();
+	var TilePos = 0;
+	var MapLevel = 1;
+	var gmap = Array();
+	var mainView = Array(0, 0);
+	var mousePos = Array(0, 0);
+	var playerPos = Array(0, 0);
+	var mapOffset = Array(0, 0);
+	var mapSizeOffset = Array(0, 0);
+	var mapBigOffset = Array(0, 0);
+	var mousedown = false;
+	var wallB = false;
+	var clearT = false;
+	var maxDepth = 5;
+	var tileSelected = 0;
+	var viewElement;
+	var ctx;
+	var zombieimage;
+	var zombie2image;
+	var beaconimage;
+	var floorelement;
+	var floorctx;
+	var tileimage;
+	var timeLapse;
+	var inter;
+	
+	
+	
+	function setupLevel(){
+		
+	}
+	function loaded(){
+		viewElement = document.getElementById("c");
+		var mobile = (/iphone|ipad|ipod|android|blackberry|mini|windows\sce|palm/i.test(navigator.userAgent.toLowerCase()));  
+    	if (mobile) { 
+			viewElement.width = window.innerWidth;	
+			viewElement.height = window.innerHeight;
+		}
+		mainView[0] = viewElement.width;
+		mainView[1] = viewElement.height;
+		
+		ctx = viewElement.getContext('2d');
+		
+			
+		
+		floorelement = document.createElement('canvas');
+		floorimg = document.getElementById("floor");
+		zombieimage = document.getElementById("zombie");
+		zombie2image = document.getElementById("zombie2");
+		beaconimage = document.getElementById("beacon");
+		tileimage = document.getElementById("tileset");
+		floorelement.width = floorimg.width;
+		floorelement.height = floorimg.height;
+		var c = 0;
+		for(var i = 0; i < (tileimage.width/32); i++){
+			for(var b = 0; b < (tileimage.height/32); b++){
+				TileSet.push(Array(i*32, b*32));
+			}
+		}
+		for(var i = 0; i < (512/32); i++){
+			gmap[i] = Array();
+			for(var b = 0; b < (mainView[0]/32); b++){
+				gmap[i][b] = Array();
+				gmap[i][b][0] = 0;
+				for(var c = 1; c < maxDepth; c++){
+					gmap[i][b][c] = -1;	
+				}
+			}
+		}
+		floorctx = floorelement.getContext("2d");
+		floorctx.drawImage(floorimg, 0, 0);
+		setupLevel();
+		
+		timeLapse = new Date().getTime();
+		
+		window.addEventListener("keypress", keyboard, false);
+		window.addEventListener("mousedown", mouse, false);
+		window.addEventListener("mouseup", mouseup, false);
+		window.addEventListener("mousemove", mousemove, false);
+		window.addEventListener("resize", resize, false);
+		document.getElementById("levelup").addEventListener("click", function(){
+			var val = parseInt(document.getElementById("level").value);
+			if(val < maxDepth-1){
+				document.getElementById("level").value = val + 1;
+			}
+		}, false);
+		document.getElementById("leveldown").addEventListener("click", function(){
+			var val = parseInt(document.getElementById("level").value);
+			if(val > 1){
+				document.getElementById("level").value = val - 1;
+			}
+		}, false);
+		document.getElementById("wall").addEventListener("click", function(){
+			wallB = !wallB;
+		}, false);
+		document.getElementById("clear").addEventListener("click", function(){
+			clearT = !clearT;
+		}, false);
+		document.getElementById("compile").addEventListener("click", function(){
+			var output = document.getElementById("output");
+			output.innerHTML = JSON.stringify(mapSizeOffset)+"[SEPERATOR]"+JSON.stringify(TileSet) + "[SEPERATOR]"+ JSON.stringify(gmap);
+		}, false);
+		document.getElementById("tilesup").addEventListener("click", function(){
+			if(TilePos<TileSet.length/60-1)
+				TilePos++;
+		}, false);
+		document.getElementById("tilesdown").addEventListener("click", function(){
+			if(TilePos>0){
+				TilePos--;	
+			}
+		}, false);
+		setInterval(run, 10);
+	}
+	
+	
+	function map(ctx){
+		ctx.font = "16pt Arial";
+		ctx.fillStyle="rgb(255,0,0)";
+		for(var i = mapSizeOffset[0]-mapOffset[0]; i < (mapSizeOffset[0]-mapOffset[0])+20; i++){
+			for(var b = mapSizeOffset[1]-mapOffset[1]; b < (mapSizeOffset[1]-mapOffset[1])+16; b++){
+				if(gmap[b][i] instanceof Array){
+					for(var x = 1; x < maxDepth; x++){
+						if(gmap[b][i][x] != -1){
+							ctx.drawImage(	tileimage, TileSet[gmap[b][i][x]][0], TileSet[gmap[b][i][x]][1], 32, 32, i*32-((mapSizeOffset[0]-mapOffset[0])*32), b*32-((mapSizeOffset[1]-mapOffset[1])*32), 32, 32);
+						}
+					}
+					if(gmap[b][i][0] == 1)
+						ctx.fillText("W",  i*32+mapOffset[0]*32+8, b*32+mapOffset[1]*32+26);
+				}
+			}
+		}
+	}
+	function tiledisplay(ctx){
+		var i = 0;
+		var b = 0;
+		for(var x=TilePos*60; x<(60+60*TilePos); x++){
+			if(i%(mainView[0]/32)==0 && i!=0){
+				i = 0;
+				b++;	
+			}
+			ctx.drawImage(	tileimage, TileSet[x][0], TileSet[x][1], 32, 32, (i++)*32, 512+(b)*32, 32, 32)
+		}
+	}
+	function cursor(ctx){
+		ctx.strokeStyle = "rgb(255, 255, 255)";
+		ctx.strokeRect(mousePos[0]*32, mousePos[1]*32, 32, 32);	
+	}
+	
+	function run(){
+		var currentTime = new Date().getTime();
+		var dt = currentTime - timeLapse;
+		timeLapse = currentTime;
+		dt /= 1000;
+		ctx.clearRect(0,0, mainView[0], mainView[1]);
+		map(ctx);
+		tiledisplay(ctx);
+		cursor(ctx);
+	}
+	function keyboard(e){
+		var key = e.keyCode? e.keyCode : e.charCode;
+		switch(key){
+			case 97:
+			{
+				//playerPos[0] += 32;
+				mapOffset[0] ++;
+				if(mapSizeOffset[0] < mapOffset[0]){	
+					mapSizeOffset[0]++;
+					//Use Splice to add in element in front of array :D
+					for(var i = 0; i < (512/32); i++){
+						gmap[i].unshift(new Array());
+						gmap[i][0][0] = 0;
+						for(var c = 1; c < maxDepth; c++){
+							gmap[i][0][c] = -1;	
+						}
+					}
+				}
+			}
+			break;
+			case 100:
+				//playerPos[0] -= 32;
+				mapOffset[0]--;
+				if(mapOffset[0] < mapBigOffset[0]){
+					mapBigOffset[0]--;
+					for(var i = 0; i < (512/32); i++){
+						gmap[i].push(new Array());
+						gmap[i][gmap[i].length-1][0] = 0;
+						for(var c = 1; c < maxDepth; c++){
+							gmap[i][gmap[i].length-1][c] = -1;	
+						}
+					}
+				}
+			break;
+			case 115:
+			{
+				//playerPos[1] -= 32;
+				mapOffset[1]--;
+				if(mapOffset[1] < mapBigOffset[1]){
+					mapBigOffset[1]--;
+					gmap.push(new Array());
+					for(var b = 0; b < (mainView[0]/32); b++){
+						gmap[gmap.length-1][b] = Array();
+						gmap[gmap.length-1][b][0] = 0;
+						for(var c = 1; c < maxDepth; c++){
+							gmap[gmap.length-1][b][c] = -1;	
+						}
+					}
+				}
+			}
+			break;
+			case 119:
+			{
+				//playerPos[1] += 32;
+				mapOffset[1] ++;
+				if(mapSizeOffset[1] < mapOffset[1]){
+					mapSizeOffset[1]++;
+					gmap.unshift(new Array());
+					for(var b = 0; b < (mainView[0]/32); b++){
+						gmap[0][b] = Array();
+						gmap[0][b][0] = 0;
+						for(var c = 1; c < maxDepth; c++){
+							gmap[0][b][c] = -1;	
+						}
+					}
+				}
+			}
+			break;	
+		}
+	}
+	function mouse(e){
+		var XPos = e.clientX - viewElement.offsetLeft;
+		var YPos = e.clientY - viewElement.offsetTop;
+		//On Click Set Tile to current Level.
+		mousedown = true;
+		if(XPos > 0 && XPos < viewElement.width+viewElement.offsetLeft && YPos > 0 && YPos < viewElement.height+viewElement.offsetTop-96){
+			var MouseX = Math.floor((XPos-mapOffset[0]*32)/32)+mapSizeOffset[0];
+			var MouseY = Math.floor((YPos-mapOffset[1]*32)/32)+mapSizeOffset[1]; 
+			if(!clearT){ 
+				var level = parseInt(document.getElementById('level').value);
+				gmap[MouseY][MouseX][level] = tileSelected;
+				gmap[MouseY][MouseX][0] = wallB? 1: 0;
+			}else{
+				gmap[MouseY][MouseX][0] = 0;
+				for(var i = 1; i < maxDepth; i++){
+					gmap[MouseY][MouseX][i] = -1 ;
+				}
+			}
+		}else
+		if( YPos > viewElement.height+viewElement.offsetTop-96  && YPos < viewElement.height+viewElement.offsetTop){
+			var MouseX = mousePos[0]; 
+			var MouseY = mousePos[1]-16;
+			tileSelected = Math.floor( (MouseX) + (MouseY)*19 + 60*TilePos);
+		}
+	}
+	
+	function mouseup(e){
+		mousedown = false;	
+	}
+	
+	function mousemove(e){
+		
+		var XPos = e.clientX - viewElement.offsetLeft;
+		var YPos = e.clientY - viewElement.offsetTop;
+		if(XPos > 0 && XPos < viewElement.width+viewElement.offsetLeft && YPos > 0 && YPos < viewElement.height+viewElement.offsetTop){
+			mousePos[0] = Math.floor(XPos/32);
+			mousePos[1] = Math.floor(YPos/32);
+		}
+		if(!mousedown){
+			return false;	
+		}
+		if(XPos > 0 && XPos < viewElement.width+viewElement.offsetLeft && YPos > 0 && YPos < viewElement.height+viewElement.offsetTop-96){
+			var MouseX = Math.floor((XPos-mapOffset[0]*32)/32)+mapSizeOffset[0];
+			var MouseY = Math.floor((YPos-mapOffset[1]*32)/32)+mapSizeOffset[1]; 
+			if(!clearT){ 
+				var level = parseInt(document.getElementById('level').value);
+				gmap[MouseY][MouseX][level] = tileSelected;
+				gmap[MouseY][MouseX][0] = wallB? 1: 0;
+			}else{
+				gmap[MouseY][MouseX][0] = 0;
+				for(var i = 1; i < maxDepth; i++){
+					gmap[MouseY][MouseX][i] = -1 ;
+				}
+			}
+		}else
+		if( YPos > viewElement.height+viewElement.offsetTop-96  && YPos < viewElement.height+viewElement.offsetTop){
+			var MouseX = mousePos[0]; 
+			var MouseY = mousePos[1]-16;
+			tileSelected = Math.floor( (MouseX) + (MouseY)*19 + 60*TilePos);
+		}
+		
+	}
+	function resize(e){
+		if(window.innerWidth< viewElement.width){
+			viewElement.width = window.innerWidth;	
+		}
+		if(window.innerHeight  < viewElement.height){
+			viewElement.height = window.innerHeight ;	
+		}
+		mainView[0] = viewElement.width;
+		mainView[1] = viewElement.height;
+		ctx = viewElement.getContext('2d');	
+	}
+	
+	window.addEventListener("load", loaded, false);
+</script>
+</head>
+
+<body>
+<img id='floor' src="images/flashlight.gif" style='display:none;' />
+<img id='zombie' src="images/zombie.png" style="display:none;" />
+<img id='zombie2' src="images/zombie2.png" style="display:none;" />
+<img id='beacon' src="images/beacon.png" style="display:none;" />
+<img id='tileset' src='images/rooftops.png' style='display:none;'  />
+<div id='game' style="width:100%;text-align:center;">
+<canvas id='c' width="640px" height="608px">Canvas is not enabled.</canvas>
+</div>
+<div id='mapcontrols' style="width:100%; text-align:center;">
+TileSet: <input type="button" value="+" id='tilesup' />
+<input type="button" value="-" id="tilesdown"  />
+Depth: <input type="text" value="1" id='level' disabled="disabled" size="2" />
+<input type="button" value="+" id='levelup' />
+<input type="button" value="-" id="leveldown" />
+<input type="button" value="Wall" id="wall" />
+<input type="button" value="Clear" id="clear" />
+<input type="button" value="Compile" id='compile'  />
+</div>
+<div id='output' style='height:200px;overflow:auto;background-color:#333;color:#FFF;'>
+Map Json Data
+</div>
+</body>
+</html>

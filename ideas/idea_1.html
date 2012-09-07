@@ -1,0 +1,275 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+<title>Idea_1</title>
+<link href="../css/reset.css" rel="stylesheet" type="text/css" />
+<style type="text/css">
+	#console{
+		color:#FF1A00;
+		background-color:#C3D9FF;
+		overflow:hidden;
+		padding-top:5px;
+		padding-bottom:5px;
+		width:100%;
+	}
+	#console span{
+		color:#F03;
+		font-weight:bold;	
+	}
+	#combos{
+		padding-top:10px;
+		padding-left:10px;	
+	}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script type="text/javascript">
+	
+	//Variables
+	var lastTime = false;
+	var maxInput = 10;
+	var TotalDamage = 0;
+	var TotalMomentum = 0;
+	var currentDamage = 0;
+	var comboActivated = false;
+	var currentInput = new Array();
+	
+	var Player = {
+		name: "Player1",
+		energy: 0,	
+	};
+	/*
+	
+		Light 'LEFT'
+		Medium 'DOWN'
+		HEAVY 'RIGHT'
+		
+		TODO:
+			Dynamic Combo Creation
+			
+			Add in sprite manager
+			
+			Momentum Counter
+			
+		LATER:
+			Timing
+			
+
+	*/
+	
+	var Attacks = new Array(
+		{
+			name: "Stab",
+			cost: 0,
+			bonus: 5,
+			damage: 10,
+			key: 'left'
+		},
+		{
+			name: "Slash",
+			cost: 0,
+			bonus: 10,
+			damage: 5,
+			key: 'down'	
+		},
+		{
+			name: "Slam",
+			cost: 10,
+			bonus: 3,
+			damage: 13,
+			key: 'right'	
+		},
+		{		
+			name: "Upper-cut",
+			cost: 15,
+			bonus: 0,
+			damage: 18,
+			key: 'right'
+		},
+		{
+			name: "Thrust",
+			cost: 10,
+			bonus: 5,
+			damage: 20,
+			key: 'down'
+		},
+		{
+			name: "Hilt Strike",
+			cost: 10,
+			bonus: 3,
+			damage: '<span>Enemy Stunned!</span>',
+			key: 'right'
+		}
+	);
+	
+	var Combos = new Array(
+		{
+			name: "Combo Actived",
+			attacks: [0,1,1,2,3]	
+		}
+	);
+	
+	//Init function
+	var main = function(){
+		controls();
+		availableCombos();
+		setInterval("loop()", 72);
+	}
+	
+	//Update Total Damage
+	
+	var updateDamage = function(){
+		$('#totalDamage').children('span').text(TotalDamage);	
+		$('#currentDamage').children('span').text(currentDamage);
+	}
+	
+	//Check Combos
+	var checkCombos = function(){
+		for(c = 0; c < Combos.length; c++){
+			combo = Combos[c];
+			name = combo.name;
+			attacks = combo.attacks;
+			if( currentInput.length >= attacks.length ){
+				activated = true;
+				totalDamage = 0;
+				//Combo Real Logic
+				rvrse = attacks.reverse();
+				for(a = attacks.length-1; a >= 0; a--){
+					attack = Attacks[rvrse[a]];
+					totalDamage += attack.damage;
+					if(currentInput[a] != attack.key){
+						activated = false;
+						break;
+					}
+				}
+				attacks.reverse();
+				
+				if(activated){
+					comboActivated = true;
+					currentInput.splice(0, attacks.length);
+					TotalDamage += totalDamage;
+					log();
+				}
+			}
+		}
+	}
+	
+	//Clear Input
+	var clearInput = function(){
+		delete currentInput;
+		currentInput = new Array();
+		clearLog();	
+	}
+	
+	//init controls
+	var controls = function(){
+		$(document).keyup(function(e){
+			var code = (e.keyCode ? e.keyCode : e.which);
+			
+			//Check to see if we've exhausted the combo length
+			if(currentInput.length >= maxInput || comboActivated){
+				comboActivated = false;
+				v = currentInput.pop();
+				TotalDamage += v;
+			}
+			
+			switch(code){
+				case 38:
+					//UP
+				break;
+				
+				case 40:
+					currentInput.splice(0, 0, 'down');
+					currentDamage = Attacks[1].damage;
+					
+					log(" M ");
+				break;
+				
+				case 37:
+					currentInput.splice(0, 0, 'left');
+					currentDamage = Attacks[0].damage;
+					log(" L ");
+				break;
+				
+				case 39:
+					currentInput.splice(0, 0, 'right');
+					currentDamage = 0;
+					log(" H ");
+				break;	
+			}
+			checkCombos();
+			updateDamage();
+		});
+	}
+	
+	//Available Combos
+	var availableCombos = function(){
+		comboDisplay = $("#combos").html("");
+		for(c = 0; c < Combos.length; c++){
+			combo = Combos[c];
+			attacks = combo.attacks
+			comboDisplay.append(combo.name + ": ");
+			for( a = 0; a < attacks.length; a++){
+				attack = Attacks[attacks[a]];
+				comboDisplay.append(attack.key + " ");
+			}
+			comboDisplay.append("<br />");
+			updateDamage();
+		}
+	}
+	
+	//Console Logging
+	var log = function(str){
+		$("#console").html("&nbsp;");
+		for(a = 0; a < currentInput.length; a++){
+			$("#console").append(currentInput[a] + "&nbsp;");
+		}
+	}
+	var clearLog = function(){
+		$("#console").html("&nbsp;");	
+	}
+	
+	//Main loop that will call update & draw recursively
+	var loop = function(){
+		now = new Date(  );
+		dt = ( now - lastTime ) / 1000;
+		
+		update( dt );
+		draw(  );
+		
+		lastTime = now;
+	}
+	
+	//Update position of sprites and so forth
+	var update = function(dt){
+		
+	}
+	
+	//Draw sprites to the stage
+	var draw = function(){
+		
+	}
+	
+	window.addEventListener('load', main, false);
+</script>
+</head>
+
+<body>
+	<div id="console">&nbsp;</div>
+    <div id="currentDamage">Current Damage: <span>0</span></div>
+    <div id="totalDamage">Total Damage: <span>0</span></div>
+    <div id="combos">&nbsp;</div>
+    <div id="stage"></div>
+    <div id="comboselection">
+    	<ul>
+        	<li></li>
+    	</ul>
+        <ul>
+        	<li></li>
+        </ul>
+    </div>
+</body>
+
+</html>

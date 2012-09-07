@@ -1,0 +1,101 @@
+<html>
+
+<head>
+<title>Frank Natividad - Portfolio</title>
+<link href="css/reset.css" rel="stylesheet" type="text/css" />
+<link href="css/main.css" rel="stylesheet" type="text/css" />
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+<script language='javascript'>
+//Goto url
+function goto(url){
+	document.location=url;
+}
+//Animate project-details
+function details(id){
+	var d = $("#project-info");
+	var m = $("#details_"+id);
+	if( d.is( ":hidden") ){
+		d.html(m.html()).slideDown();
+	}else{
+		d.slideUp('slow',
+			function(){
+				$(this).html($("#details_"+id).html()).slideDown();
+			}
+		);
+	}
+}
+//Hide #project-info so we can animate it later.
+function init(){
+	$("#project-info").hide();
+}
+
+$(document).ready(function(){ init() });
+
+</script>
+</head>
+
+<body>
+<div class='wrapper'>
+	<div class='header'>Frank Natividad</div>
+	<div class='nav'>
+    	<ul>
+        	<li><a href="index.html">Home</a></li>
+            <li><a href="aboutme.html">About Me</a></li>
+            <li><a href="resume.html">Resume</a></li>
+            <li><a href="portfolio.html" class="active">Portfolio</a></li>
+        </ul>
+    </div>
+    <div class='content' id='projects'>
+		<div class='project' onclick='javascript:details(1)'>Zombie Attack</div>
+		<div class='project-details' id='details_1'>
+			<h2>Zombie Attack</h2>
+			<p>
+				Simple HTML5 Zombie Shooter that I made with and for my little 6 year old cousin to play during new years of 2011-2012.
+			</p>
+			<span onclick='javascript:goto("/zombie");'>Check It</span>
+		</div>
+		<div class='project' onclick='javascript:details(2);'>Career Services</div>
+		<div class='project-details' id='details_2'>
+			<h2>NMSU Career Services</h2>
+			<p>
+				Webpage I have been taking care of since 2009.
+			</p>
+			<span onclick='javascript:goto("http://careerservices.nmsu.edu");'>Check It</span>
+		</div>
+		<div class='project' onclick='javascript:details(3);'>Tower Defense</div>
+		<div class='project-details' id='details_3'>
+			<h2>Delicious Tower Defense</h2>
+			<p>
+				Team game project developed in Java for a class I took in 2011. Achieved 1st place in the class voted on by my peers.
+			</p>
+			<span onclick='javascript:goto("http://www.greenfoot.org/scenarios/2707");'>Check It</span>
+		</div>
+        <div class='project' onclick='javascript:details(4);'>Life Simulation</div>
+		<div class='project-details' id='details_4'>
+			<h2>Simple Life Simulation</h2>
+			<p>
+				Simple simulation that has small organisms run around looking for partners to create more organisms or food and if they get to close to the black hole in the center they die.
+			</p>
+			<span onclick='javascript:goto("http://www.youtube.com/watch?v=vHXA_FOzgF0");'>Check It</span>
+		</div>
+        <div class='project' onclick='javascript:details(5);'>Easter Game</div>
+		<div class='project-details' id='details_5'>
+			<h2>Easter Eggs Game</h2>
+			<p>
+				Easter game made in 2012. It was online so I only had it up for easter as a specialized game. It was made in under a day and just worked for what I wanted from it. 
+			</p>
+			<span onclick='javascript:goto("http://www.youtube.com/watch?v=iW2eB0CzvOo");'>Check It</span>
+		</div>
+        <div class='project' onclick='javascript:details(6);'>Limnlet</div>
+		<div class='project-details' id='details_6'>
+			<h2>Limnlet - start saving your memories...</h2>
+			<p>
+				Project I'm currently working on that is my own idea of how a memory should be saved and viewed. 
+			</p>
+			<span onclick='javascript:goto("http://www.youtube.com/watch?v=8Rz6DESOSiA");'>Check It</span>
+		</div>
+	</div>
+	<div class='project-info' id='project-info'>&nbsp;</div>
+</div>
+</body>
+</html>

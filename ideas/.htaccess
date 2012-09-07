@@ -1,0 +1,4 @@
+AuthType Basic
+AuthName "Ideas"
+AuthUserFile "/home1/eddswebs/.htpasswds/public_html/franknatividad/ideas/passwd"
+require valid-user
