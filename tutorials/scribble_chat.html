@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<title>Scribble - Chat</title>
+</head>
+
+
+<script type='text/javascript'>
+	var ws;
+	var displayOnTextArea = function ( msg ) {
+		$('#textarea').prepend (  msg + '<br />');	
+	}
+	
+	var sendMessage = function ( msg ) {
+		ws.send ( msg );	
+	}
+	
+	$(document).keypress ( function ( event ) {
+		 if ( event.which == 13 ) { 
+		 	displayOnTextArea ( 'You: ' + $('#input_').val() );
+			sendMessage ( $('#input_').val() );
+			$('#input_'). val ( "" );
+		 }
+	} );
+	
+	$(document).ready ( function ( ) {
+			console.log ( "Attempting to connect to server" );
+			ws = new WebSocket ( "ws://173.255.200.128:1035/1354879749ChatApp" ); //We need a serverip.
+			ws.onopen = function ( ) {
+				console.log ( "Connected" );	
+				displayOnTextArea ( "Connected to server" );
+			}
+			
+			ws.onmessage = function ( evt ) {
+				console.log ( evt.msg );	
+				displayOnTextArea ( 'Other: ' + evt.data );
+			}
+			
+			ws.onclose = function ( ) {
+				console.log ( "Disconnected" );
+				displayOnTextArea ( "Disconnected from server" );
+			}
+	} );
+</script>
+
+<body>
+<div id='textarea' style='height:400px;width:400px;border:solid 1px #AAA;'></div>
+<div id='inputarea' style='width:400px;'><input type='text' id='input_' style='width:400px;' /></div>
+</body>
+</html>

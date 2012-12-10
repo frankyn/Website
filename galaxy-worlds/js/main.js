@@ -101,76 +101,43 @@ Sprite_FN.prototype.getY = function ( ) {
 
 Sprite_FN.prototype.update = function ( dt ) { }
 Sprite_FN.prototype.draw = function ( ctx ) { }
-
-
-var Galaxy = function ( x, y ) {
-	var g = new Sprite_FN ( );
-	g.stars = new Array ( );
-	for ( var i = 0; i < 2; i++ ) {
-		g.log ( i );
-		g.stars.push ( Star ( x, y, 60 + i * 140, 2 - i) );	
-	}
-	g.setPosition ( x, y );
-	g.update = function ( dt ) {
-		for ( var i = 0; i < this.stars.length; i++ ) {
-			this.stars[i].setPosition( this.x, this.y );
-			this.stars[i].update ( dt );	
-		}
-	};
+/*
+	SpaceBody creates 
+*/
+var SpaceBody = function ( x, y, size, r, speed, sbody, satellite, color) {
+	var s = new Sprite_FN ( );
 	
-	g.draw = function ( ctx ) {			
-		ctx.save();
-		ctx.fillStyle = "rgb(0,255,0)";
-		ctx.fillRect ( this.x, this.y, 10, 10 );
-		ctx.restore();
-		for ( var i = 0; i < this.stars.length; i++ ) {
-			this.stars[i].draw ( ctx );	
-		}
-	};
-	return g;
-}
-
-var Star = function ( x, y, r, d) {
-	var s = new Sprite_FN ( );
-	s.radius = r;
-	s.satellites = new Array ( );
-	for ( var i = 0; i < 1; i++ ) {
-		s.satellites.push ( Satellite ( x, y, i * 50 + 30, 5 - i ) );	
-	}
 	s.setPosition ( x, y );
-	s.update = function ( dt ) {
-		this.x = this.x0 + Math.cos ( dt * 2 * Math.PI * d) * this.radius;
-		this.y = this.y0 + Math.sin ( dt * 2 * Math.PI * d) * this.radius;
-		for ( var i = 0; i < this.satellites.length; i++ ) {
-			this.satellites[i].setPosition(this.x, this.y);
-			this.satellites[i].update ( dt );	
-		}
-	}
-	s.draw = function ( ctx ) {
-		ctx.save();
-		ctx.fillStyle = "rgb(0,0,255)";
-		ctx.fillRect (this.x , this.y, 10, 10);		
-		ctx.restore();
-		for ( var i = 0; i < this.satellites.length; i++ ) {
-			this.satellites[i].draw ( ctx );	
-		}
-	}
-	return s;
-}
-
-var Satellite = function ( x, y, r, d ) {
-	var s = new Sprite_FN ( );
+	s.color = color;
 	s.radius = r;
-	s.setPosition( x, y );
+	s.size = size;
+	s.satellite = satellite ? satellite : null;
+	s.next = sbody ? sbody : null;
+	
 	s.update = function ( dt ) {
-		this.x = this.x0 + Math.cos ( dt * 2 * Math.PI * d ) * this.radius;
-		this.y = this.y0 + Math.sin ( dt * 2 * Math.PI * d ) * this.radius;	
+		var delta = dt * 2 * Math.PI * speed;
+		this.x = this.x0 + Math.cos ( delta ) * this.radius;
+		this.y = this.y0 + Math.sin ( delta ) * this.radius;
+		if ( this.next ) {
+			this.next.update ( dt );
+		}
+		if ( this.satellite ) {
+			this.satellite.setPosition ( this.x, this.y );
+			this.satellite.update ( dt );	
+		}
 	}
 	s.draw = function ( ctx ) {
+		console.log ( "Draw");
 		ctx.save();
-		ctx.fillStyle = "rgb(255,0,0)";
-		ctx.fillRect (this.x , this.y, 5, 5);		
+		ctx.fillStyle = color;
+		ctx.fillRect ( this.x-this.size/2 , this.y-this.size/2, this.size, this.size);
+		if ( this.satellite ) {
+			this.satellite.draw ( ctx );	
+		}
 		ctx.restore();
+		if ( this.next ) {
+			this.next.draw ( ctx );
+		}
 	}
 	return s;
 }
@@ -220,10 +187,38 @@ var GalaxyWorlds_FN = function ( ) {
 		}
 		scope.updateGalaxyPosition();
 	});
-	this.galaxies = Array();
-	for ( var i = 0; i < 10; i++ ) {
-		this.galaxies.push( Galaxy ( Math.random() * 3000 , Math.random() * 3000 ) );
+	$(window).resize( function ( ) { 
+		scope.background.width = $ ( document ).width();
+		scope.background.height = $ ( document ) .height();
+		scope.gfx.resize ( $ ( document ).width(), $ ( document).height() );
+	} );
+	this.galaxies = null;
+	//SpaceBody ( x, y, size, r, speed, sbody, satellite, color)
+	for ( var i = 0; i < 1; i++ ) {
+		var x = this.player.x;
+		var y = this.player.y;
+		var star = null;
+		var color = null;
+		for ( var b = 0; b < 5; b ++ ) {
+			var planet = null;
+			for ( var c = 0; c < 1; c ++ ) {
+				var moon = null;
+				color = "rgb(255,255,255)";
+				
+				for ( var d = 0; d < 1; d ++ ) {
+					moon = SpaceBody ( x, y, 2, 20, 2.5, moon, null, color );	
+				}
+				color = "rgb(0,255,0)";
+				planet = SpaceBody ( x, y, 3, 10, 1, planet, moon, color ); 	
+			}
+			color = "rgb(255, 0, 0)";
+			star = SpaceBody ( x, y, 3, 50 + b * 50, 2 - .1 * b, star, planet, color );	
+		}
+		color = "rgb(0,0,255)";
+		this.galaxies = SpaceBody ( x, y, 5, 0, 1, this.galaxies, star, color );	
 	}
+	
+	
 };
 
 GalaxyWorlds_FN.prototype.log = function ( MSG ) {
@@ -245,28 +240,20 @@ GalaxyWorlds_FN.prototype.loop = function ( ) {
 	this.currTime = new Date();
 	this.update ( (this.currTime - this.lastTime)/5000 );
 	this.draw ( );
+	this.lastTime = ( this.currTime - this.lastTime ) % 2;
 };
 
 GalaxyWorlds_FN.prototype.updateGalaxyPosition = function ( ) {
-	for ( var i = 0; i < 10; i++ ) {
-		this.galaxies[i].setPosition ( this.galaxies[i].x0 - this.player_x, this.galaxies[i].y0 - this.player_y );	
-	}
+	
 }
 
 GalaxyWorlds_FN.prototype.update = function ( dt ) {
-	for ( var i = 0; i < 10; i++ ) {
-		this.galaxies[i].update ( dt );
-	}
+	this.galaxies.update ( dt );
 };
 
 GalaxyWorlds_FN.prototype.draw = function ( ) { 
 	this.background.draw ( this.gfx.ctx() );
-	for ( var i = 0; i < 10; i++ ) {
-		if ( this.galaxies[i].dist ( this.player ) < $(document).width() ) {
-			this.galaxies[i].draw ( this.gfx.ctx() );
-		}
-	}
-	this.player.draw ( this.gfx.ctx() );
+	this.galaxies.draw ( this.gfx.ctx() );
 	this.gfx.swap();
 };
 
